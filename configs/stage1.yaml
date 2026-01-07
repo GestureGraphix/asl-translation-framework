@@ -1,0 +1,37 @@
+# Stage 1: Self-Supervised Phonological Pre-training
+# Section 7.2: "We first pre-train the encoder on unlabeled video"
+
+# Training parameters
+num_epochs: 50
+batch_size: 16
+learning_rate: 0.001
+weight_decay: 0.0001
+min_lr: 0.000001
+grad_clip: 1.0
+
+# Loss weights
+lambda_phon: 1.0
+
+# Model architecture
+hidden_dim: 128
+num_layers: 2
+dropout: 0.3
+projection_dim: 128
+
+# Contrastive learning
+temperature: 0.07
+
+# VQ parameters
+commitment_cost: 0.25
+
+# Augmentation parameters
+crop_ratio: [0.7, 1.0]
+speed_range: [0.8, 1.2]
+noise_std: 0.05
+
+# Data
+num_workers: 0
+seed: 42
+
+# Checkpointing
+save_every: 10

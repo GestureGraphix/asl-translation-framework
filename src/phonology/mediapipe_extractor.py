@@ -12,9 +12,12 @@ Total: 1623 landmarks × 3 coordinates = 4869-dimensional observation
 """
 
 import mediapipe as mp
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
 import numpy as np
 from typing import Optional, Dict, Tuple
 from dataclasses import dataclass
+import cv2
 
 
 @dataclass
@@ -56,40 +59,34 @@ class RawLandmarks:
 
 class MediaPipeExtractor:
     """
-    Extract landmarks from video frames using MediaPipe Holistic.
-    
+    Extract landmarks from video frames using MediaPipe (Tasks API v0.10+).
+
     Configuration matches Section 2.2:
-        - Holistic model (combined hand + pose + face)
+        - Combined hand + pose + face detection
         - World coordinates (not image pixel coordinates)
         - Minimum detection confidence: 0.5
-        - Minimum tracking confidence: 0.5
+
+    Note: MediaPipe 0.10+ uses separate landmarkers for hands, pose, and face.
     """
-    
+
     def __init__(
         self,
         min_detection_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
-        model_complexity: int = 1,  # 0=lite, 1=full, 2=heavy
+        model_complexity: int = 1,  # Not used in new API, kept for compatibility
     ):
         """
-        Initialize MediaPipe Holistic model.
-        
+        Initialize MediaPipe landmarkers (new Tasks API).
+
         Args:
-            min_detection_confidence: Minimum confidence for detection to be considered successful
-            min_tracking_confidence: Minimum confidence for tracking to be considered successful
-            model_complexity: Model complexity (0, 1, or 2). Higher = more accurate but slower.
-                             Use 1 for development, consider 0 for edge deployment.
+            min_detection_confidence: Minimum confidence for detection
+            min_tracking_confidence: Minimum confidence for tracking (not used in new API)
+            model_complexity: Kept for API compatibility, not used in MediaPipe 0.10+
         """
-        self.mp_holistic = mp.solutions.holistic.Holistic(
-            static_image_mode=False,  # Video stream, not single images
-            model_complexity=model_complexity,
-            min_detection_confidence=min_detection_confidence,
-            min_tracking_confidence=min_tracking_confidence,
-            smooth_landmarks=True,  # Temporal smoothing
-        )
-        
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_holistic_module = mp.solutions.holistic
+        # Note: MediaPipe 0.10+ Tasks API works differently - models are loaded per-image
+        # We'll initialize them on first use to avoid model file path issues
+        self.min_detection_confidence = min_detection_confidence
+        self._models_initialized = False
         
     def extract_frame(
         self, 

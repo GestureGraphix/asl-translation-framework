@@ -12,10 +12,9 @@ Key equations:
 """
 
 import numpy as np
-from typing import Tuple, Dict
 from dataclasses import dataclass
 
-from mediapipe_extractor import RawLandmarks
+from .mediapipe_extractor_v2 import RawLandmarks
 
 
 @dataclass
@@ -128,8 +127,8 @@ class FeatureExtractor:
         
         # Compute scale: shoulder width
         shoulder_vec = right_shoulder - left_shoulder
-        s_t = np.linalg.norm(shoulder_vec)
-        
+        s_t = float(np.linalg.norm(shoulder_vec))
+
         if s_t < 1e-6:
             # Degenerate case: shoulders too close (bad detection)
             # Fall back to identity normalization
@@ -519,7 +518,7 @@ def test_sim3_invariance():
     
     Validates that normalize_sim3(g·X) ≈ normalize_sim3(X) for g ∈ Sim(3).
     """
-    from mediapipe_extractor import RawLandmarks
+    from .mediapipe_extractor_v2 import RawLandmarks
     
     # Create synthetic landmarks
     np.random.seed(42)

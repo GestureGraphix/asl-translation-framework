@@ -15,6 +15,121 @@ This repository implements the mathematical framework described in **"Mathematic
 
 ---
 
+## 🚧 IN PROGRESS - Stage 1: Self-Supervised Pre-training (Current Work)
+
+**Status**: Implementing Stage 1 phonological pre-training
+**Date**: January 7, 2026
+**Branch**: main
+
+### Phase 1: System Validation ✅ COMPLETE
+
+**Goal**: Prove the system works before scaling to full paper implementation.
+
+**Results** (Completed Jan 7, 2026):
+- ✅ **Best validation accuracy**: 21.74% (vs 5% random baseline, 0% blank collapse)
+- ✅ **Training accuracy**: 55.56% (proves model is learning)
+- ✅ **Infrastructure validated**: Feature caching, GPU training, CTC loss all working
+- ✅ **Strong per-class results**: "yes" 100%, "family" 100%, several at 33%
+
+**Phase 1 Configuration**:
+```python
+# Data
+Train: 243 samples, Val: 46 samples
+Vocab: 21 classes (20 signs + blank)
+Cache: data/cache/phase1/{train,val}_20glosses.pkl
+
+# Model
+Params: 71,893 (~72K)
+Hidden dim: 64, Layers: 1, Dropout: 0.5
+Params/sample: 296:1 ✓
+
+# Training
+Epochs: 30, Batch: 8, LR: 1e-3
+Blank penalty: 0.1, Weight decay: 1e-4
+```
+
+**Key Findings**:
+- Train/val gap (55% vs 22%) indicates need for more data
+- System learns real patterns, no blank collapse
+- Ready to scale following paper's 3-stage curriculum
+
+### Current Task: Stage 1 Pre-training Implementation
+
+**Stage 1 Goal** (Section 7.2 of paper): Self-supervised phonological learning on unlabeled video.
+
+**Mathematical Formulation**:
+```
+Loss = L_contrast + L_phon
+```
+- **L_contrast**: Contrastive loss for temporal coherence
+- **L_phon**: Phonological reconstruction loss
+
+**Implementation Plan**:
+1. **Data preparation**:
+   - Use WLASL videos (no gloss labels needed)
+   - Extract MediaPipe features for all available videos
+   - Create temporal augmentations (crop, speed, noise)
+
+2. **Phonological quantizer training**:
+   - Implement product VQ codebooks (Section 2.3)
+   - Train on reconstructing phonological features
+   - Learn hand shape, location, orientation, movement, non-manual codebooks
+
+3. **Contrastive learning**:
+   - Positive pairs: augmented views of same video
+   - Negative pairs: different videos
+   - Learn temporally coherent representations
+
+4. **Validation**:
+   - Codebook usage (should use most codebook entries)
+   - Reconstruction quality
+   - Invariance to augmentations
+
+**Files to Create**:
+- `src/training/stage1_phonology.py` - Main training script
+- `src/phonology/contrastive_loss.py` - Contrastive learning
+- `src/phonology/augmentations.py` - Temporal augmentations
+- `configs/stage1.yaml` - Hyperparameters
+
+**Next Steps After Stage 1**:
+- Stage 2: CTC training with pre-trained phonological features (500-2000 signs)
+- Stage 3: Full WFST + discourse + morphology integration
+
+### Files Modified (Phase 1)
+
+**Created**:
+- `scripts/analyze_training.py` - Training analysis tool
+- `scripts/quick_test.py` - Fast inference testing
+- `scripts/train_phase1.py` - Phase 1 training script
+- `TRAINING_ANALYSIS.md` - Comprehensive diagnosis report
+- `checkpoints/real_mediapipe_cached/training_curves.png` - Loss visualization
+
+**Fixed** (Type Safety - 37 diagnostics → 10):
+- `src/phonology/features.py` - Float casts
+- `src/phonology/quantizer.py` - Optional handling
+- `src/models/encoder.py` - None assertions
+- `src/models/ctc_head.py` - Return types
+- `src/training/stage2_ctc.py` - Optimizer types
+- `.vscode/settings.json` - Pylance config
+
+### Key Lessons Learned
+
+1. **Data > Model Size**: 243 samples sufficient to prove concept, need 1000s for production
+2. **Monitor Predictions**: Loss curves can hide blank collapse - track accuracy too
+3. **Start Simple**: Validate on 20 classes before 2000
+4. **Infrastructure First**: Fix types, caching, tools before scaling
+5. **Train/Val Gap**: 55%/22% shows need for regularization or more data
+
+### GPU Setup
+
+**Hardware**: NVIDIA GeForce MX550 (2GB VRAM)
+- Status: Working ✓
+- CUDA: 12.8
+- Training time (Phase 1): ~2.5 min/run (30 epochs)
+- Temperature: 56-60°C (comfortable)
+
+---
+
 ## 📚 Paper-to-Code Mapping
 
 ### Section 2: Phonology (`src/phonology/`)
@@ -416,11 +531,40 @@ Follow paper notation where possible:
 
 ## 🎯 Current Status
 
-**Phase**: Foundation implementation
-**Next Steps**: 
-1. Implement MediaPipe extractor
-2. Build feature extraction pipeline
-3. Train product VQ quantizer
-4. Validate Proposition 1 (noise robustness)
+**⚠️ SEE "IN PROGRESS" SECTION AT TOP OF FILE FOR LATEST STATUS ⚠️**
+
+**Quick Summary** (Updated: January 7, 2026):
+- ✅ **Phase 1 Complete**: System validation successful (21.74% accuracy, 4.3x better than random)
+- ✅ **Infrastructure**: Type-safe, GPU training, feature caching, CTC all working
+- 🔄 **Current**: Implementing Stage 1 self-supervised phonological pre-training
+- 🎯 **Goal**: Train product VQ codebooks on unlabeled video for better feature learning
+- 📍 **Next**: Stage 2 CTC training (500-2000 signs) → Stage 3 WFST integration
+
+**Phase 1 Results** (Validation):
+```
+Best accuracy: 21.74% (epoch 28)
+Random baseline: 5%
+Blank collapse: 0% (previous)
+Train accuracy: 55.56% (proves learning)
+
+Per-class highlights:
+- "yes": 100% (3/3)
+- "family": 100% (2/2)
+- "computer": 20% (1/5)
+```
+
+**Phase 1 Training Command**:
+```bash
+python3.11 scripts/train_phase1.py \
+  --train-cache data/cache/phase1/train_20glosses.pkl \
+  --val-cache data/cache/phase1/val_20glosses.pkl \
+  --device cuda --num-epochs 30
+```
+
+**Stage 1 Implementation** (In Progress):
+- Implementing contrastive loss for temporal coherence
+- Building product VQ quantizer for phonological features
+- Creating temporal augmentations (crop, speed, noise)
+- Training on unlabeled WLASL videos
 
 **Long-term Goal**: Full system demonstrating <200ms latency at 5k+ vocabulary

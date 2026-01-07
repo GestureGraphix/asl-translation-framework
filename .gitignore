@@ -1,0 +1,63 @@
+# Data files (too large for git)
+data/raw/**/*.mp4
+data/raw/**/*.avi
+data/processed/**/*.h5
+data/processed/**/*.npy
+
+# Keep metadata and structure
+!data/raw/**/metadata.json
+!data/raw/**/README.md
+!data/splits/
+
+# Temporary files
+*.tmp
+*.cache
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Training artifacts and checkpoints
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+training_log.txt
+*.log
+
+# Model caches
+*.pkl
+*.pickle
+feature_cache/
+data/cache/  # Phase 1 feature caches
+data/codebooks/
+data/wfst_cache/
+
+# Experiment outputs
+outputs/
+runs/
+logs/
+wandb/
+tensorboard/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models directory (saved models)
+models/

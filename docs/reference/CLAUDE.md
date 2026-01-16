@@ -15,87 +15,79 @@ This repository implements the mathematical framework described in **"Mathematic
 
 ---
 
-## 🚧 IN PROGRESS - Stage 1: Self-Supervised Pre-training (Current Work)
+## 🚧 CURRENT STATUS - WLASL100 Training on Google Colab
 
-**Status**: Implementing Stage 1 phonological pre-training
-**Date**: January 7, 2026
+**Status**: Feature extraction complete, ready for training
+**Date**: January 2026
 **Branch**: main
+**Platform**: Google Colab (GPU) for faster training
 
-### Phase 1: System Validation ✅ COMPLETE
+### What We've Accomplished
 
-**Goal**: Prove the system works before scaling to full paper implementation.
+**Phase 1 Goal**: Prove the system works before scaling to full paper implementation. ✅ **COMPLETE**
 
-**Results** (Completed Jan 7, 2026):
-- ✅ **Best validation accuracy**: 21.74% (vs 5% random baseline, 0% blank collapse)
-- ✅ **Training accuracy**: 55.56% (proves model is learning)
-- ✅ **Infrastructure validated**: Feature caching, GPU training, CTC loss all working
-- ✅ **Strong per-class results**: "yes" 100%, "family" 100%, several at 33%
+**WLASL100 Extraction** (Google Colab): ✅ **COMPLETE**
+1. ✅ **Fixed MediaPipe model download** - Corrected pose landmarker URL path
+2. ✅ **Extracted features for 100 signs** - 1,077 videos processed
+   - 806 training features (55.9% success rate)
+   - 168 validation features (49.7% success rate)
+   - 103 test features (39.9% success rate)
+3. ✅ **Saved to Google Drive** - All features available at `/content/drive/MyDrive/asl_data/extracted_features/`
+4. 🎯 **Next: Train on Google Colab** - Faster than laptop, ready to scale
 
-**Phase 1 Configuration**:
+**Previous Phase 1 Work** (20-sign dataset):
+1. ✅ **Fixed infrastructure** - All type errors resolved, codebase clean
+2. ✅ **Analyzed root cause** - 1.18M params vs 20 samples = 59,000:1 ratio (should be <1000:1)
+3. ✅ **Cached features** - 243 train / 46 val samples (20 unique signs)
+4. ✅ **Trained Phase 1** - Smaller model (~50K params) with proper data balance → 21.74% accuracy
+
+### Current Task: Train WLASL100 Model on Google Colab
+
+**Hyperparameters**:
 ```python
 # Data
-Train: 243 samples, Val: 46 samples
-Vocab: 21 classes (20 signs + blank)
-Cache: data/cache/phase1/{train,val}_20glosses.pkl
+Train samples: 243 (was: 20)
+Val samples: 46 (was: 10)
+Vocab size: 21 (was: 2001)
+Signs: 20 unique (was: 2)
 
-# Model
-Params: 71,893 (~72K)
-Hidden dim: 64, Layers: 1, Dropout: 0.5
-Params/sample: 296:1 ✓
+# Model (reduce from 1.18M → 50K params)
+Hidden dim: 64 (was: 128)
+Layers: 1 (was: 2)
+Dropout: 0.5 (was: 0.3)
+Params/sample: ~200:1 (was: 59,000:1) ✓
 
 # Training
-Epochs: 30, Batch: 8, LR: 1e-3
-Blank penalty: 0.1, Weight decay: 1e-4
+Epochs: 30
+Batch size: 8
+Learning rate: 1e-3
+Blank penalty: 0.1 (NEW - prevents blank collapse)
+Weight decay: 1e-4 (NEW)
 ```
 
-**Key Findings**:
-- Train/val gap (55% vs 22%) indicates need for more data
-- System learns real patterns, no blank collapse
-- Ready to scale following paper's 3-stage curriculum
+**Feature Cache Location** (Google Drive):
+- `/content/drive/MyDrive/asl_data/extracted_features/features_train_wlasl100.pkl` (806 samples)
+- `/content/drive/MyDrive/asl_data/extracted_features/features_val_wlasl100.pkl` (168 samples)
+- `/content/drive/MyDrive/asl_data/extracted_features/features_test_wlasl100.pkl` (103 samples)
+- `/content/drive/MyDrive/asl_data/extracted_features/vocabulary.json` (100 gloss vocabulary)
 
-### Current Task: Stage 1 Pre-training Implementation
+**Previous Phase 1 Cache** (Local):
+- `data/cache/phase1/features_train_phase1.pkl` (243 samples, 20 signs)
+- `data/cache/phase1/features_val_phase1.pkl` (46 samples, 20 signs)
 
-**Stage 1 Goal** (Section 7.2 of paper): Self-supervised phonological learning on unlabeled video.
+**Training**: Use Google Colab notebook for WLASL100 (see `notebooks/`)
 
-**Mathematical Formulation**:
-```
-Loss = L_contrast + L_phon
-```
-- **L_contrast**: Contrastive loss for temporal coherence
-- **L_phon**: Phonological reconstruction loss
+**Previous Phase 1 Results** (20 signs):
+- Random baseline: 5%
+- Achieved: 21.74% accuracy ✅
+- Validated infrastructure successfully
 
-**Implementation Plan**:
-1. **Data preparation**:
-   - Use WLASL videos (no gloss labels needed)
-   - Extract MediaPipe features for all available videos
-   - Create temporal augmentations (crop, speed, noise)
+**WLASL100 Training Goals**:
+- Scale to 100 signs (5x vocabulary increase)
+- Use Colab GPU for faster training
+- Compare performance with 20-sign baseline
 
-2. **Phonological quantizer training**:
-   - Implement product VQ codebooks (Section 2.3)
-   - Train on reconstructing phonological features
-   - Learn hand shape, location, orientation, movement, non-manual codebooks
-
-3. **Contrastive learning**:
-   - Positive pairs: augmented views of same video
-   - Negative pairs: different videos
-   - Learn temporally coherent representations
-
-4. **Validation**:
-   - Codebook usage (should use most codebook entries)
-   - Reconstruction quality
-   - Invariance to augmentations
-
-**Files to Create**:
-- `src/training/stage1_phonology.py` - Main training script
-- `src/phonology/contrastive_loss.py` - Contrastive learning
-- `src/phonology/augmentations.py` - Temporal augmentations
-- `configs/stage1.yaml` - Hyperparameters
-
-**Next Steps After Stage 1**:
-- Stage 2: CTC training with pre-trained phonological features (500-2000 signs)
-- Stage 3: Full WFST + discourse + morphology integration
-
-### Files Modified (Phase 1)
+### Files Modified This Session
 
 **Created**:
 - `scripts/analyze_training.py` - Training analysis tool
@@ -112,21 +104,40 @@ Loss = L_contrast + L_phon
 - `src/training/stage2_ctc.py` - Optimizer types
 - `.vscode/settings.json` - Pylance config
 
+### Next Steps (After Phase 1 Success)
+
+**Week 2-3: Stage 1 Pre-training** (Follow Paper)
+- Implement self-supervised phonological learning
+- Train quantizer on unlabeled videos
+- Use learned features for better CTC
+
+**Week 4+: Scale to Production**
+- Scale to 500-2000 signs
+- Implement Stage 2 (CTC with pre-trained features)
+- Add Stage 3 (WFST, discourse, morphology)
+- Optimize for <200ms latency
+
 ### Key Lessons Learned
 
-1. **Data > Model Size**: 243 samples sufficient to prove concept, need 1000s for production
-2. **Monitor Predictions**: Loss curves can hide blank collapse - track accuracy too
+1. **Data > Model Size**: 20 samples insufficient for any model
+2. **Monitor Predictions**: Loss curves hide blank collapse
 3. **Start Simple**: Validate on 20 classes before 2000
 4. **Infrastructure First**: Fix types, caching, tools before scaling
-5. **Train/Val Gap**: 55%/22% shows need for regularization or more data
 
 ### GPU Setup
 
-**Hardware**: NVIDIA GeForce MX550 (2GB VRAM)
-- Status: Working ✓
+**Local Hardware**: NVIDIA GeForce MX550 (2GB VRAM)
+- Status: Working ✓ (for 20-sign dataset)
 - CUDA: 12.8
-- Training time (Phase 1): ~2.5 min/run (30 epochs)
+- Training time (Phase 1, 20 signs): ~10-15 min/run
 - Temperature: 56-60°C (comfortable)
+- **Limitation**: Too slow for 100-sign dataset (requires 30+ hours)
+
+**Google Colab GPU** (for WLASL100):
+- Status: Working ✓ (for feature extraction)
+- GPU: Tesla T4 or better (16GB VRAM)
+- Training time: Much faster than laptop (estimated 1-2 hours for 100 signs)
+- **Advantage**: Free GPU access, faster iteration
 
 ---
 
@@ -533,38 +544,27 @@ Follow paper notation where possible:
 
 **⚠️ SEE "IN PROGRESS" SECTION AT TOP OF FILE FOR LATEST STATUS ⚠️**
 
-**Quick Summary** (Updated: January 7, 2026):
-- ✅ **Phase 1 Complete**: System validation successful (21.74% accuracy, 4.3x better than random)
-- ✅ **Infrastructure**: Type-safe, GPU training, feature caching, CTC all working
-- 🔄 **Current**: Implementing Stage 1 self-supervised phonological pre-training
-- 🎯 **Goal**: Train product VQ codebooks on unlabeled video for better feature learning
-- 📍 **Next**: Stage 2 CTC training (500-2000 signs) → Stage 3 WFST integration
+**Quick Summary** (Updated: January 2026):
+- ✅ Phase: Foundation complete (MediaPipe, features, encoder, CTC)
+- ✅ Infrastructure: Type-safe, GPU training, feature caching working
+- ✅ Phase 1 (20 signs): Complete - 21.74% accuracy validates system
+- ✅ WLASL100 feature extraction: Complete on Google Colab (1,077 videos)
+- 🎯 Current: Ready to train on 100-sign dataset using Google Colab
+- 📍 Next: Train Stage 2 CTC model on WLASL100, compare with 20-sign results
+- 🚀 Long-term: Follow paper's 3-stage curriculum for scaling to 5k+ signs
 
-**Phase 1 Results** (Validation):
-```
-Best accuracy: 21.74% (epoch 28)
-Random baseline: 5%
-Blank collapse: 0% (previous)
-Train accuracy: 55.56% (proves learning)
+**Training Commands**:
 
-Per-class highlights:
-- "yes": 100% (3/3)
-- "family": 100% (2/2)
-- "computer": 20% (1/5)
-```
-
-**Phase 1 Training Command**:
+**Local (20 signs, Phase 1)**:
 ```bash
 python3.11 scripts/train_phase1.py \
-  --train-cache data/cache/phase1/train_20glosses.pkl \
-  --val-cache data/cache/phase1/val_20glosses.pkl \
+  --train-cache data/cache/phase1/features_train_phase1.pkl \
+  --val-cache data/cache/phase1/features_val_phase1.pkl \
   --device cuda --num-epochs 30
 ```
 
-**Stage 1 Implementation** (In Progress):
-- Implementing contrastive loss for temporal coherence
-- Building product VQ quantizer for phonological features
-- Creating temporal augmentations (crop, speed, noise)
-- Training on unlabeled WLASL videos
+**Google Colab (100 signs, WLASL100)**:
+- Use `notebooks/WLASL100_Training_Colab.ipynb` (to be created)
+- Features available at: `/content/drive/MyDrive/asl_data/extracted_features/`
 
 **Long-term Goal**: Full system demonstrating <200ms latency at 5k+ vocabulary

@@ -357,11 +357,33 @@ def main():
                         help='Path to cached training features file')
     parser.add_argument('--val-feature-cache', type=str, default=None,
                         help='Path to cached validation features file')
+    parser.add_argument('--extract-features', action='store_true',
+                        help='Extract features on-the-fly for uncached samples')
+    parser.add_argument('--pretrained-encoder', type=str, default=None,
+                        help='Path to Stage 1 checkpoint for encoder initialization')
+    parser.add_argument('--seed', type=int, default=42,
+                        help='Random seed for reproducibility')
 
     args = parser.parse_args()
 
+    # Set random seed for reproducibility
+    import random
+    import numpy as np
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(args.seed)
+        torch.cuda.manual_seed_all(args.seed)
+
     print(f"\n{'='*70}")
     print(f"Stage 2: CTC Training")
+    print(f"{'='*70}")
+    print(f"Seed: {args.seed}")
+    if args.pretrained_encoder:
+        print(f"Using pre-trained encoder: {args.pretrained_encoder}")
+    else:
+        print(f"Using random encoder initialization")
     print(f"{'='*70}\n")
 
     # Create datasets
@@ -372,7 +394,7 @@ def main():
         split='train',
         max_samples=args.max_samples,
         feature_cache_path=args.feature_cache,
-        extract_features=True,  # Extract features on-the-fly if not cached
+        extract_features=args.extract_features,  # Extract features on-the-fly if not cached
     )
 
     val_dataset = WLASLDataset(
@@ -381,7 +403,7 @@ def main():
         split='val',
         max_samples=args.max_samples // 2 if args.max_samples else None,
         feature_cache_path=args.val_feature_cache,  # Use separate val cache
-        extract_features=True,
+        extract_features=args.extract_features,
     )
 
     # Create data loaders
@@ -424,6 +446,23 @@ def main():
         ctc_config=ctc_config,
         device=args.device,
     )
+
+    # Load pre-trained encoder if specified
+    if args.pretrained_encoder:
+        print(f"\nLoading pre-trained encoder from {args.pretrained_encoder}...")
+        checkpoint = torch.load(args.pretrained_encoder, map_location=args.device, weights_only=False)
+
+        # Extract encoder state dict from Stage 1 checkpoint
+        if 'encoder_state_dict' in checkpoint:
+            encoder_state = checkpoint['encoder_state_dict']
+        else:
+            raise KeyError("Checkpoint does not contain 'encoder_state_dict'")
+
+        # Load into trainer's encoder
+        trainer.model.encoder.load_state_dict(encoder_state)
+        print(f"✓ Successfully loaded pre-trained encoder weights")
+        print(f"  Stage 1 epoch: {checkpoint.get('epoch', 'unknown')}")
+        print(f"  Stage 1 best loss: {checkpoint.get('best_loss', 'unknown'):.4f}\n")
 
     # Train
     trainer.train(

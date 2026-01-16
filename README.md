@@ -91,15 +91,16 @@ pytest tests/ --cov=src --cov-report=html
 
 ```
 asl-translation-framework/
-├── CLAUDE.md                          # 🎯 Implementation guide (START HERE!)
 ├── README.md                          # This file
-├── ASL_Modeling.tex                   # Mathematical paper (reference)
 ├── requirements.txt
 │
-├── docs/
-│   ├── implementation_notes.md        # Design decisions & roadmap
-│   ├── architecture.md                # System architecture
-│   └── references/                    # Linguistics papers
+├── docs/                              # All documentation (organized by category)
+│   ├── guides/                        # How-to guides and tutorials
+│   ├── status/                        # Status tracking and progress
+│   ├── planning/                      # Planning documents and roadmaps
+│   ├── reference/                     # Reference documentation (includes CLAUDE.md)
+│   ├── paper/                         # Research paper (ASL Modeling.tex)
+│   └── README.md                      # Documentation index
 │
 ├── src/                               # Source code
 │   ├── phonology/                     # Section 2: Feature extraction
@@ -219,8 +220,11 @@ H \circ C \circ M \circ D \circ L \circ G
 
 ## Development Workflow
 
-### 1. Start with CLAUDE.md
-Read [`CLAUDE.md`](CLAUDE.md) for detailed implementation guidance, mathematical mappings, and development roadmap.
+### 1. Start with Documentation
+- **Getting Started**: [Quick Start Guide](docs/guides/QUICK_START_COLAB.md) for Colab training
+- **Implementation Reference**: [CLAUDE.md](docs/reference/CLAUDE.md) - Complete implementation guide
+- **Current Status**: [Status](docs/status/STATUS.md) - Latest project status
+- **Documentation Index**: [docs/README.md](docs/README.md) - All documentation organized
 
 ### 2. Implement a Module
 ```bash
